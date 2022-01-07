@@ -47,6 +47,296 @@
           "Forum"
         ]
       }
+    },
+    "/forum/account/{accountId}": {
+      "delete": {
+        "operationId": "Forum_DeleteAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumDeleteAccountResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/post": {
+      "post": {
+        "operationId": "Forum_CreatePost",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumCreatePostResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/forumCreatePostRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/post/{postId}/comment": {
+      "post": {
+        "operationId": "Forum_CreateComment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumCreateCommentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "authorId": {
+                  "type": "string",
+                  "format": "uint64"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "parentId": {
+                  "type": "string",
+                  "format": "uint64"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/post/{postId}/comment/{commentId}/vote": {
+      "post": {
+        "operationId": "Forum_CreateCommentVote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumCreateCommentVoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "vote": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/post/{postId}/tags": {
+      "post": {
+        "operationId": "Forum_AssignTagsToPost",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumAssignTagsToPostResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tagsId": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uint64"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/post/{postId}/vote": {
+      "post": {
+        "operationId": "Forum_CreatePostVote",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumCreatePostVoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "vote": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
+    "/forum/tag": {
+      "post": {
+        "operationId": "Forum_CreateTag",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumCreateTagResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/forumCreateTagRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
     }
   },
   "definitions": {
@@ -64,6 +354,9 @@
         }
       }
     },
+    "forumAssignTagsToPostResponse": {
+      "type": "object"
+    },
     "forumCreateAccountRequest": {
       "type": "object",
       "properties": {
@@ -80,6 +373,81 @@
           "format": "uint64"
         }
       }
+    },
+    "forumCreateCommentResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "forumCreateCommentVoteResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "forumCreatePostRequest": {
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "forumCreatePostResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "forumCreatePostVoteResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "forumCreateTagRequest": {
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "forumCreateTagResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "forumDeleteAccountResponse": {
+      "type": "object"
     },
     "protobufAny": {
       "type": "object",

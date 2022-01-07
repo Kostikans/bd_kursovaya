@@ -12,6 +12,53 @@ service Forum {
     };
   }
 
+  rpc DeleteAccount (DeleteAccountRequest) returns (DeleteAccountResponse) {
+    option (google.api.http) = {
+      delete: "/forum/account/{account_id}"
+    };
+  }
+
+  rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {
+    option (google.api.http) = {
+      post: "/forum/post"
+      body: "*"
+    };
+  }
+
+  rpc CreateComment (CreateCommentRequest) returns (CreateCommentResponse) {
+    option (google.api.http) = {
+      post: "/forum/post/{post_id}/comment"
+      body: "*"
+    };
+  }
+
+  rpc CreateTag (CreateTagRequest) returns (CreateTagResponse) {
+    option (google.api.http) = {
+      post: "/forum/tag"
+      body: "*"
+    };
+  }
+
+  rpc AssignTagsToPost (AssignTagsToPostRequest) returns (AssignTagsToPostResponse) {
+    option (google.api.http) = {
+      post: "/forum/post/{post_id}/tags"
+      body: "*"
+    };
+  }
+
+  rpc CreatePostVote (CreatePostVoteRequest) returns (CreatePostVoteResponse) {
+    option (google.api.http) = {
+      post: "/forum/post/{post_id}/vote"
+      body: "*"
+    };
+  }
+
+  rpc CreateCommentVote (CreateCommentVoteRequest) returns (CreateCommentVoteResponse) {
+    option (google.api.http) = {
+      post: "/forum/post/{post_id}/comment/{comment_id}/vote"
+      body: "*"
+    };
+  }
 }
 
 message Account {
@@ -25,5 +72,69 @@ message CreateAccountRequest{
 }
 
 message CreateAccountResponse{
+  uint64 id = 1;
+}
+
+message DeleteAccountRequest{
+  uint64 account_id = 1;
+}
+
+message DeleteAccountResponse{
+}
+
+message CreatePostRequest{
+  uint64 author_id = 1;
+  string title = 2;
+  string text = 3;
+}
+
+message CreatePostResponse{
+  uint64 id = 1;
+}
+
+message CreateCommentRequest{
+  uint64 author_id = 1;
+  uint64 post_id = 2;
+  string text = 3;
+  uint64 parent_id = 4;
+}
+
+message CreateCommentResponse{
+  uint64 id = 1;
+}
+
+message CreateTagRequest{
+  uint64 author_id = 1;
+  string name = 2;
+}
+
+message CreateTagResponse{
+  uint64 id = 1;
+}
+
+message AssignTagsToPostRequest{
+  repeated uint64 tags_id = 1;
+  uint64 post_id = 2;
+}
+
+message AssignTagsToPostResponse{
+}
+
+message CreatePostVoteRequest{
+  uint64 post_id = 1;
+  bool vote = 2;
+}
+
+message CreatePostVoteResponse{
+  uint64 id = 1;
+}
+
+message CreateCommentVoteRequest{
+  uint64 post_id = 1;
+  uint64 comment_id = 2;
+  bool vote = 3;
+}
+
+message CreateCommentVoteResponse{
   uint64 id = 1;
 }

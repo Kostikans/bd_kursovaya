@@ -45,7 +45,6 @@ CREATE TABLE comment
 	author_id  BIGINT       NOT NULL REFERENCES account (id) ON DELETE RESTRICT,
 	post_id    BIGINT       NOT NULL REFERENCES post (id) ON DELETE RESTRICT,
 	parent_id  BIGINT       NOT NULL    DEFAULT 0,
-	title      VARCHAR(100) NOT NULL,
 	text       TEXT         NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -78,7 +77,8 @@ CREATE TABLE post_tag
 (
 	id      BIGSERIAL PRIMARY KEY,
 	post_id BIGINT NOT NULL REFERENCES post (id) ON DELETE RESTRICT,
-	tag_id  BIGINT NOT NULL REFERENCES tag (id) ON DELETE RESTRICT
+	tag_id  BIGINT NOT NULL REFERENCES tag (id) ON DELETE RESTRICT,
+	UNIQUE (post_id,tag_id)
 );
 
 CREATE INDEX ON post_tag USING btree (post_id);

@@ -1,8 +1,7 @@
-package main
+package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -10,8 +9,8 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/kostikan/bd_kursovaya/internal/app/api/forum"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.uber.org/dig"
 	"google.golang.org/grpc"
 
 	f "github.com/kostikan/bd_kursovaya/internal/pb/api/forum"
@@ -21,16 +20,52 @@ func serveSwagger(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "pkg/swagger/api/forum/forum.swagger.json")
 }
 
-func startGRPC() {
-	lis, err := net.Listen("tcp", "localhost:8079")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+// MainOpts - main options
+type MainOpts struct {
+	Components map[string]interface{}
+}
+
+// Main - main
+func Main(params ...func(*MainOpts)) {
+	ctx := context.Background()
+	opts := &MainOpts{
+		Components: map[string]interface{}{
+			"forum service": forumServiceProvider,
+			"facade":        facadeProvider,
+
+			"database":     databaseProvider,
+			"account repo": accountRepoProvider,
+			"comment repo": commentRepoProvider,
+			"post repo":    postRepoProvider,
+			"tag repo ":    tagRepoProvider,
+		},
 	}
-	grpcServer := grpc.NewServer()
-	forum := forum.NewForum(forum.Opts{})
-	f.RegisterForumServer(grpcServer, forum)
-	log.Println("gRPC server ready...")
-	fmt.Println(grpcServer.Serve(lis))
+	for _, param := range params {
+		param(opts)
+	}
+
+	c := dig.New()
+
+	err := provideAndInvoke(ctx, c, opts.Components, func(ac appContext) {
+		lis, err := net.Listen("tcp", "localhost:8079")
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+		grpcServer := grpc.NewServer()
+		f.RegisterForumServer(grpcServer, ac.Forum)
+		log.Println("gRPC server ready...")
+		go grpcServer.Serve(lis)
+
+		time.Sleep(1 * time.Second)
+		go startHTTP()
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		wg.Wait()
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func startHTTP() {
@@ -72,16 +107,4 @@ func startHTTP() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func main() {
-	go startGRPC()
-	time.Sleep(1 * time.Second)
-	go startHTTP()
-
-	// Block forever
-	var wg sync.WaitGroup
-	wg.Add(1)
-	wg.Wait()
-
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kostikan/bd_kursovaya/internal/app/api/forum"
+	"github.com/kostikan/bd_kursovaya/internal/pkg/balancer"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/facade"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/repo"
 	_ "github.com/lib/pq"
@@ -57,12 +58,20 @@ func databaseProvider(ctx context.Context) (*sqlx.DB, error) {
 	return db, nil
 }
 
+func txManagerProvider(ctx context.Context, db *sqlx.DB) (*balancer.TxManager, error) {
+	txManager := balancer.NewTxManager(db)
+
+	return txManager, nil
+}
+
 type facadeProviderOpts struct {
 	dig.In
 	*repo.AccountRepo
 	*repo.CommentRepo
 	*repo.PostRepo
 	*repo.TagRepo
+
+	*balancer.TxManager
 }
 
 func facadeProvider(opts facadeProviderOpts) *facade.Facade {
@@ -71,6 +80,7 @@ func facadeProvider(opts facadeProviderOpts) *facade.Facade {
 		CommentRepo: opts.CommentRepo,
 		PostRepo:    opts.PostRepo,
 		TagRepo:     opts.TagRepo,
+		TxManager:   opts.TxManager,
 	})
 }
 

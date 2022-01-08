@@ -3,6 +3,7 @@ syntax = "proto3";
 package forum;
 option go_package = "github.com/bd_kursovaya/api/forum/forum";
 import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 
 service Forum {
   rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse) {
@@ -57,6 +58,18 @@ service Forum {
     option (google.api.http) = {
       post: "/forum/post/{post_id}/comment/{comment_id}/vote"
       body: "*"
+    };
+  }
+
+  rpc GetPosts (GetPostListRequest) returns (GetPostListResponse) {
+    option (google.api.http) = {
+      get: "/forum/post/list"
+    };
+  }
+
+  rpc GetComments (GetCommentListRequest) returns (GetCommentListResponse) {
+    option (google.api.http) = {
+      get: "/forum/post/{post_id}/comment/list"
     };
   }
 }
@@ -122,7 +135,8 @@ message AssignTagsToPostResponse{
 
 message CreatePostVoteRequest{
   uint64 post_id = 1;
-  bool vote = 2;
+  uint64 author_id = 2;
+  bool vote = 3;
 }
 
 message CreatePostVoteResponse{
@@ -132,9 +146,61 @@ message CreatePostVoteResponse{
 message CreateCommentVoteRequest{
   uint64 post_id = 1;
   uint64 comment_id = 2;
-  bool vote = 3;
+  uint64 author_id = 3;
+  bool vote = 4;
 }
 
 message CreateCommentVoteResponse{
   uint64 id = 1;
+}
+
+message GetPostListRequest{
+  uint64 cursor = 1;
+  uint32 limit = 2;
+}
+
+message Tag {
+  uint64 id = 1;
+  uint64 author_id = 2;
+  string name = 3;
+}
+
+message Post {
+  uint64 id = 1;
+  uint64 author_id = 2;
+  string title = 3;
+  string text = 4;
+  google.protobuf.Timestamp created_at = 5;
+  uint64 like_count = 6;
+  uint64 dislike_count = 7;
+  repeated Tag tags = 8;
+}
+
+message GetPostListResponse{
+  repeated Post posts = 1;
+  uint64 next = 2;
+  bool has_next = 3;
+}
+
+message GetCommentListRequest{
+  uint64 cursor = 1;
+  uint32 limit = 2;
+  uint64 post_id = 3;
+}
+
+message Comment {
+  uint64 id = 1;
+  uint64 author_id = 2;
+  uint64 parent_id = 3;
+  uint64 post_id = 4;
+  string text = 5;
+  google.protobuf.Timestamp created_at = 6;
+  uint64 like_count = 7;
+  uint64 dislike_count = 8;
+}
+
+message GetCommentListResponse{
+  repeated Comment comments = 1;
+  uint64 next = 2;
+  bool has_next = 3;
 }

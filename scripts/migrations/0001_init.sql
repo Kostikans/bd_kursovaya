@@ -16,7 +16,8 @@ CREATE TABLE post
 	title      VARCHAR(100) NOT NULL,
 	text       TEXT         NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	tags_id    BIGINT[]    NOT NULL  DEFAULT '{}'::BIGINT[]
 );
 
 CREATE TABLE post_vote_agg
@@ -24,7 +25,8 @@ CREATE TABLE post_vote_agg
 	id            BIGSERIAL PRIMARY KEY,
 	post_id       BIGINT NOT NULL REFERENCES post (id) ON DELETE RESTRICT,
 	like_count    BIGINT NOT NULL DEFAULT 0,
-	dislike_count BIGINT NOT NULL DEFAULT 0
+	dislike_count BIGINT NOT NULL DEFAULT 0,
+	UNIQUE (post_id)
 );
 
 CREATE INDEX ON post_vote_agg USING btree (post_id);
@@ -34,7 +36,8 @@ CREATE TABLE post_vote
 	id        BIGSERIAL PRIMARY KEY,
 	post_id   BIGINT NOT NULL REFERENCES post (id) ON DELETE RESTRICT,
 	author_id BIGINT NOT NULL REFERENCES account (id) ON DELETE RESTRICT,
-	vote      BOOL   NOT NULL
+	vote      BOOL   NOT NULL,
+	UNIQUE (post_id,author_id)
 );
 
 CREATE INDEX ON post_vote USING btree (post_id);
@@ -57,7 +60,8 @@ CREATE TABLE comment_vote_agg
 	id            BIGSERIAL PRIMARY KEY,
 	comment_id    BIGINT NOT NULL REFERENCES comment (id) ON DELETE RESTRICT,
 	like_count    BIGINT NOT NULL DEFAULT 0,
-	dislike_count BIGINT NOT NULL DEFAULT 0
+	dislike_count BIGINT NOT NULL DEFAULT 0,
+	UNIQUE (comment_id)
 );
 
 CREATE INDEX ON comment_vote_agg USING btree (comment_id);
@@ -68,7 +72,8 @@ CREATE TABLE comment_vote
 	post_id    BIGINT NOT NULL REFERENCES post (id) ON DELETE RESTRICT,
 	author_id  BIGINT NOT NULL REFERENCES account (id) ON DELETE RESTRICT,
 	comment_id BIGINT NOT NULL REFERENCES comment (id) ON DELETE RESTRICT,
-	vote       BOOL   NOT NULL
+	vote       BOOL   NOT NULL,
+	UNIQUE (post_id,comment_id,author_id)
 );
 
 CREATE INDEX ON comment_vote USING btree (post_id, comment_id);

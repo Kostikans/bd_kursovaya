@@ -2,11 +2,16 @@ package facade
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/kostikan/bd_kursovaya/internal/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+type TxManager interface {
+	RunTX(ctx context.Context, name string, op func(ctx context.Context) error) error
+}
 
 type AccountRepo interface {
 	CreateAccount(ctx context.Context, account model.Account) (id uint64, err error)
@@ -15,12 +20,22 @@ type AccountRepo interface {
 type CommentRepo interface {
 	CreateComment(ctx context.Context, comment model.Comment) (id uint64, err error)
 	CheckAuthorAndPostExist(ctx context.Context, comment model.Comment) (exist bool, err error)
+
+	GetCommentVote(ctx context.Context, comment model.CommentVote) (res model.CommentVote, err error)
+	CreateCommentVote(ctx context.Context, comment model.CommentVote) (id uint64, err error)
+	IncrementCommentVote(ctx context.Context, commentID uint64, likeCount int64, dislikeCount int64) (id uint64, err error)
 }
 
 type PostRepo interface {
 	CreatePost(ctx context.Context, post model.Post) (id uint64, err error)
 	CheckAuthorExist(ctx context.Context, post model.Post) (exist bool, err error)
 	CheckPostExist(ctx context.Context, postID uint64) (exist bool, err error)
+
+	GetPostVote(ctx context.Context, post model.PostVote) (res model.PostVote, err error)
+	CreatePostVote(ctx context.Context, post model.PostVote) (id uint64, err error)
+	IncrementPostVote(ctx context.Context, postID uint64, likeCount int64, dislikeCount int64) (id uint64, err error)
+
+	GetPosts(ctx context.Context, limit uint32, cursor uint64) (rows []model.ExtendedPost, next uint64, err error)
 }
 
 type TagRepo interface {
@@ -28,6 +43,7 @@ type TagRepo interface {
 	CheckAuthorExist(ctx context.Context, tag model.Tag) (exist bool, err error)
 	BulkUpdatePostTags(ctx context.Context, ids []uint64, postID uint64) (err error)
 	CheckPostAndTagsExist(ctx context.Context, ids []uint64, postID uint64) (exist bool, err error)
+	UpdatePostTags(ctx context.Context, ids []uint64, postID uint64) (err error)
 }
 
 type Facade struct {
@@ -35,6 +51,7 @@ type Facade struct {
 	commentRepo CommentRepo
 	postRepo    PostRepo
 	tagRepo     TagRepo
+	txManager   TxManager
 }
 
 type Opts struct {
@@ -42,6 +59,7 @@ type Opts struct {
 	CommentRepo CommentRepo
 	PostRepo    PostRepo
 	TagRepo     TagRepo
+	TxManager   TxManager
 }
 
 func NewFacade(opts Opts) *Facade {
@@ -50,6 +68,7 @@ func NewFacade(opts Opts) *Facade {
 		commentRepo: opts.CommentRepo,
 		postRepo:    opts.PostRepo,
 		tagRepo:     opts.TagRepo,
+		txManager:   opts.TxManager,
 	}
 }
 
@@ -94,13 +113,128 @@ func (f *Facade) CreateTag(ctx context.Context, tag model.Tag) (id uint64, err e
 }
 
 func (f *Facade) UpdatePostTags(ctx context.Context, tagIDs []uint64, postID uint64) (err error) {
-	exist, err := f.tagRepo.CheckPostAndTagsExist(ctx, tagIDs, postID)
-	if err != nil {
-		return
-	}
-	if !exist {
-		return status.Errorf(codes.NotFound, "post or tags not found")
-	}
+	err = f.txManager.RunTX(ctx, "update post tags", func(ctx context.Context) (err error) {
+		exist, err := f.tagRepo.CheckPostAndTagsExist(ctx, tagIDs, postID)
+		if err != nil {
+			return
+		}
+		if !exist {
+			return status.Errorf(codes.NotFound, "post or tags not found")
+		}
 
-	return f.tagRepo.BulkUpdatePostTags(ctx, tagIDs, postID)
+		err = f.tagRepo.BulkUpdatePostTags(ctx, tagIDs, postID)
+		if err != nil {
+			return
+		}
+
+		return f.tagRepo.UpdatePostTags(ctx, tagIDs, postID)
+	})
+
+	return
+}
+
+func (f *Facade) AddPostVote(ctx context.Context, postVote model.PostVote) (id uint64, err error) {
+	err = f.txManager.RunTX(ctx, "add post vote", func(ctx context.Context) (err error) {
+		var (
+			hasPrev      = true
+			prevVote     model.PostVote
+			likeCount    = int64(0)
+			dislikeCount = int64(0)
+		)
+
+		prevVote, err = f.postRepo.GetPostVote(ctx, postVote)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				hasPrev = false
+			} else {
+				return err
+			}
+		}
+
+		if postVote.Vote {
+			likeCount++
+		} else {
+			dislikeCount++
+		}
+
+		if hasPrev {
+			if prevVote.Vote != postVote.Vote {
+				if prevVote.Vote && !postVote.Vote {
+					likeCount = -1
+					dislikeCount = 1
+				} else {
+					likeCount = 1
+					dislikeCount = -1
+				}
+			} else {
+				likeCount = 0
+				dislikeCount = 0
+			}
+		}
+
+		_, err = f.postRepo.CreatePostVote(ctx, postVote)
+		if err != nil {
+			return err
+		}
+
+		_, err = f.postRepo.IncrementPostVote(ctx, postVote.PostID, likeCount, dislikeCount)
+		return err
+	})
+
+	return 0, err
+}
+
+func (f *Facade) AddCommentVote(ctx context.Context, commentVote model.CommentVote) (id uint64, err error) {
+	err = f.txManager.RunTX(ctx, "add post vote", func(ctx context.Context) (err error) {
+		var (
+			hasPrev      = true
+			prevVote     model.CommentVote
+			likeCount    = int64(0)
+			dislikeCount = int64(0)
+		)
+
+		prevVote, err = f.commentRepo.GetCommentVote(ctx, commentVote)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				hasPrev = false
+			} else {
+				return err
+			}
+		}
+
+		if commentVote.Vote {
+			likeCount++
+		} else {
+			dislikeCount++
+		}
+
+		if hasPrev {
+			if prevVote.Vote != commentVote.Vote {
+				if prevVote.Vote && !commentVote.Vote {
+					likeCount = -1
+					dislikeCount = 1
+				} else {
+					likeCount = 1
+					dislikeCount = -1
+				}
+			} else {
+				likeCount = 0
+				dislikeCount = 0
+			}
+		}
+
+		_, err = f.commentRepo.CreateCommentVote(ctx, commentVote)
+		if err != nil {
+			return err
+		}
+
+		_, err = f.commentRepo.IncrementCommentVote(ctx, commentVote.CommentID, likeCount, dislikeCount)
+		return err
+	})
+
+	return 0, err
+}
+
+func (f *Facade) GetPosts(ctx context.Context, limit uint32, cursor uint64) (res []model.ExtendedPost, next uint64, err error) {
+	return f.postRepo.GetPosts(ctx, limit, cursor)
 }

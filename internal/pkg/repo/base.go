@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	registerDBOnce = &sync.Once{}
+	registerDBOnce      = &sync.Once{}
+	basePaginationLimit = uint32(1000)
 )
 
 // NewTestDB - returns new test database connection

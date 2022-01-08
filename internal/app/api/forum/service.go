@@ -13,6 +13,9 @@ type Facade interface {
 	CreatePost(ctx context.Context, post model.Post) (id uint64, err error)
 	CreateTag(ctx context.Context, tag model.Tag) (id uint64, err error)
 	UpdatePostTags(ctx context.Context, tagIDs []uint64, postID uint64) (err error)
+	AddPostVote(ctx context.Context, postVote model.PostVote) (id uint64, err error)
+	AddCommentVote(ctx context.Context, commentVote model.CommentVote) (id uint64, err error)
+	GetPosts(ctx context.Context, limit uint32, cursor uint64) (res []model.ExtendedPost, next uint64, err error)
 }
 
 type Implementation struct {

@@ -111,6 +111,44 @@
         ]
       }
     },
+    "/forum/post/list": {
+      "get": {
+        "operationId": "Forum_GetPosts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumGetPostListResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
     "/forum/post/{postId}/comment": {
       "post": {
         "operationId": "Forum_CreateComment",
@@ -163,6 +201,51 @@
         ]
       }
     },
+    "/forum/post/{postId}/comment/list": {
+      "get": {
+        "operationId": "Forum_GetComments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumGetCommentListResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Forum"
+        ]
+      }
+    },
     "/forum/post/{postId}/comment/{commentId}/vote": {
       "post": {
         "operationId": "Forum_CreateCommentVote",
@@ -202,6 +285,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "authorId": {
+                  "type": "string",
+                  "format": "uint64"
+                },
                 "vote": {
                   "type": "boolean"
                 }
@@ -294,6 +381,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "authorId": {
+                  "type": "string",
+                  "format": "uint64"
+                },
                 "vote": {
                   "type": "boolean"
                 }
@@ -356,6 +447,42 @@
     },
     "forumAssignTagsToPostResponse": {
       "type": "object"
+    },
+    "forumComment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "authorId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "parentId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "postId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "text": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "likeCount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "dislikeCount": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
     },
     "forumCreateAccountRequest": {
       "type": "object",
@@ -448,6 +575,95 @@
     },
     "forumDeleteAccountResponse": {
       "type": "object"
+    },
+    "forumGetCommentListResponse": {
+      "type": "object",
+      "properties": {
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/forumComment"
+          }
+        },
+        "next": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "hasNext": {
+          "type": "boolean"
+        }
+      }
+    },
+    "forumGetPostListResponse": {
+      "type": "object",
+      "properties": {
+        "posts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/forumPost"
+          }
+        },
+        "next": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "hasNext": {
+          "type": "boolean"
+        }
+      }
+    },
+    "forumPost": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "authorId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "likeCount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "dislikeCount": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/forumTag"
+          }
+        }
+      }
+    },
+    "forumTag": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "authorId": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

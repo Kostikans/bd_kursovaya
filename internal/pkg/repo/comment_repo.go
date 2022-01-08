@@ -34,3 +34,30 @@ SELECT COALESCE((SELECT 1 FROM account where id = $1),0)::bool  AND
 	err = p.db.Get(&exist, query, comment.AuthorID, comment.PostID)
 	return
 }
+
+func (p *CommentRepo) GetCommentVote(ctx context.Context, comment model.CommentVote) (res model.CommentVote, err error) {
+	query := `
+SELECT id,post_id,author_id,comment_id,vote FROM comment_vote WHERE author_id = $1 AND post_id = $2 AND comment_id = $3`
+
+	err = p.db.Get(&res, query, comment.AuthorID, comment.PostID, comment.CommentID)
+	return
+}
+
+func (p *CommentRepo) CreateCommentVote(ctx context.Context, comment model.CommentVote) (id uint64, err error) {
+	query := `
+INSERT INTO comment_vote(author_id, post_id,comment_id,vote) VALUES($1,$2,$3,$4)
+ ON CONFLICT (post_id,author_id,comment_id) DO UPDATE SET vote = $4 RETURNING id`
+
+	err = p.db.Get(&id, query, comment.AuthorID, comment.PostID, comment.CommentID, comment.Vote)
+	return
+}
+
+func (p *CommentRepo) IncrementCommentVote(ctx context.Context, commentID uint64, likeCount int64, dislikeCount int64) (id uint64, err error) {
+	query := `
+WITH curr AS (SELECT comment_id,like_count,dislike_count FROM comment_vote_agg WHERE comment_id = $1)
+INSERT INTO comment_vote_agg(comment_id,like_count,dislike_count) VALUES($1,$2,$3) 
+ON CONFLICT (comment_id) DO UPDATE SET like_count = (SELECT like_count FROM curr) + $2, dislike_count = (SELECT dislike_count FROM curr) + $3 RETURNING id`
+
+	err = p.db.Get(&id, query, commentID, likeCount, dislikeCount)
+	return
+}

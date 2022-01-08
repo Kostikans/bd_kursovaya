@@ -38,6 +38,8 @@ func Main(params ...func(*MainOpts)) {
 			"comment repo": commentRepoProvider,
 			"post repo":    postRepoProvider,
 			"tag repo ":    tagRepoProvider,
+
+			"tx manager provider": txManagerProvider,
 		},
 	}
 	for _, param := range params {

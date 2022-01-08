@@ -26,6 +26,8 @@ type ForumClient interface {
 	AssignTagsToPost(ctx context.Context, in *AssignTagsToPostRequest, opts ...grpc.CallOption) (*AssignTagsToPostResponse, error)
 	CreatePostVote(ctx context.Context, in *CreatePostVoteRequest, opts ...grpc.CallOption) (*CreatePostVoteResponse, error)
 	CreateCommentVote(ctx context.Context, in *CreateCommentVoteRequest, opts ...grpc.CallOption) (*CreateCommentVoteResponse, error)
+	GetPosts(ctx context.Context, in *GetPostListRequest, opts ...grpc.CallOption) (*GetPostListResponse, error)
+	GetComments(ctx context.Context, in *GetCommentListRequest, opts ...grpc.CallOption) (*GetCommentListResponse, error)
 }
 
 type forumClient struct {
@@ -108,6 +110,24 @@ func (c *forumClient) CreateCommentVote(ctx context.Context, in *CreateCommentVo
 	return out, nil
 }
 
+func (c *forumClient) GetPosts(ctx context.Context, in *GetPostListRequest, opts ...grpc.CallOption) (*GetPostListResponse, error) {
+	out := new(GetPostListResponse)
+	err := c.cc.Invoke(ctx, "/forum.Forum/GetPosts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *forumClient) GetComments(ctx context.Context, in *GetCommentListRequest, opts ...grpc.CallOption) (*GetCommentListResponse, error) {
+	out := new(GetCommentListResponse)
+	err := c.cc.Invoke(ctx, "/forum.Forum/GetComments", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ForumServer is the server API for Forum service.
 // All implementations must embed UnimplementedForumServer
 // for forward compatibility
@@ -120,6 +140,8 @@ type ForumServer interface {
 	AssignTagsToPost(context.Context, *AssignTagsToPostRequest) (*AssignTagsToPostResponse, error)
 	CreatePostVote(context.Context, *CreatePostVoteRequest) (*CreatePostVoteResponse, error)
 	CreateCommentVote(context.Context, *CreateCommentVoteRequest) (*CreateCommentVoteResponse, error)
+	GetPosts(context.Context, *GetPostListRequest) (*GetPostListResponse, error)
+	GetComments(context.Context, *GetCommentListRequest) (*GetCommentListResponse, error)
 	mustEmbedUnimplementedForumServer()
 }
 
@@ -150,6 +172,12 @@ func (UnimplementedForumServer) CreatePostVote(context.Context, *CreatePostVoteR
 }
 func (UnimplementedForumServer) CreateCommentVote(context.Context, *CreateCommentVoteRequest) (*CreateCommentVoteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCommentVote not implemented")
+}
+func (UnimplementedForumServer) GetPosts(context.Context, *GetPostListRequest) (*GetPostListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPosts not implemented")
+}
+func (UnimplementedForumServer) GetComments(context.Context, *GetCommentListRequest) (*GetCommentListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComments not implemented")
 }
 func (UnimplementedForumServer) mustEmbedUnimplementedForumServer() {}
 
@@ -308,6 +336,42 @@ func _Forum_CreateCommentVote_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Forum_GetPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPostListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ForumServer).GetPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/forum.Forum/GetPosts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ForumServer).GetPosts(ctx, req.(*GetPostListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Forum_GetComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCommentListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ForumServer).GetComments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/forum.Forum/GetComments",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ForumServer).GetComments(ctx, req.(*GetCommentListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Forum_ServiceDesc is the grpc.ServiceDesc for Forum service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -346,6 +410,14 @@ var Forum_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCommentVote",
 			Handler:    _Forum_CreateCommentVote_Handler,
+		},
+		{
+			MethodName: "GetPosts",
+			Handler:    _Forum_GetPosts_Handler,
+		},
+		{
+			MethodName: "GetComments",
+			Handler:    _Forum_GetComments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -70,3 +70,10 @@ FROM (SELECT ARRAY_AGG(id) AS tag_array FROM (SELECT id FROM tag WHERE id IN %s)
 	err = p.db.Get(&exist, query, pq.Array(ids), postID)
 	return
 }
+
+func (p *TagRepo) UpdatePostTags(ctx context.Context, ids []uint64, postID uint64) (err error) {
+	query := `UPDATE post SET tags_id = $1 WHERE id = $2`
+
+	_, err = p.db.Exec(query, pq.Array(ids), postID)
+	return
+}

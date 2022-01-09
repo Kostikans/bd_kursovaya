@@ -197,6 +197,7 @@ message Comment {
   google.protobuf.Timestamp created_at = 6;
   uint64 like_count = 7;
   uint64 dislike_count = 8;
+  uint64 depth = 9;
 }
 
 message GetCommentListResponse{

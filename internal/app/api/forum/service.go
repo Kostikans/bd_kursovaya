@@ -16,6 +16,7 @@ type Facade interface {
 	AddPostVote(ctx context.Context, postVote model.PostVote) (id uint64, err error)
 	AddCommentVote(ctx context.Context, commentVote model.CommentVote) (id uint64, err error)
 	GetPosts(ctx context.Context, limit uint32, cursor uint64) (res []model.ExtendedPost, next uint64, err error)
+	GetComments(ctx context.Context, postID uint64, limit uint32, cursor uint64) (res []model.ExtendedComment, next uint64, err error)
 }
 
 type Implementation struct {

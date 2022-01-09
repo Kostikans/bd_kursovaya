@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Post struct {
 	ID       uint64 `db:"id"`
@@ -17,12 +21,13 @@ type PostVote struct {
 }
 
 type ExtendedPost struct {
-	ID           uint64    `db:"id"`
-	AuthorID     uint64    `db:"author_id"`
-	Title        string    `db:"title"`
-	Text         string    `db:"text"`
-	Tags         []Tag     `db:"tags"`
-	LikeCount    uint64    `db:"like_count"`
-	DislikeCount uint64    `db:"dislike_count"`
-	CreatedAt    time.Time `db:"created_at"`
+	ID           uint64        `db:"id"`
+	AuthorID     uint64        `db:"author_id"`
+	Title        string        `db:"title"`
+	Text         string        `db:"text"`
+	Tags         []Tag         `db:"tags"`
+	LikeCount    uint64        `db:"like_count"`
+	DislikeCount uint64        `db:"dislike_count"`
+	CreatedAt    time.Time     `db:"created_at"`
+	TagsIDs      pq.Int64Array `db:"tags_id"`
 }

@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (i *Implementation) GetPostList(ctx context.Context, req *desc.GetPostListRequest) (*desc.GetPostListResponse, error) {
+func (i *Implementation) GetPosts(ctx context.Context, req *desc.GetPostListRequest) (*desc.GetPostListResponse, error) {
 	posts, next, err := i.facade.GetPosts(ctx, req.GetLimit(), req.GetCursor())
 	if err != nil {
 		return nil, err

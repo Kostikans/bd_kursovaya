@@ -1,4 +1,4 @@
-package balancer
+package sql
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 
 // TxManager - transaction manager
 type TxManager struct {
-	db *sqlx.DB
+	db *Balancer
 }
 
 // NewTxManager - return new transaction manager
-func NewTxManager(db *sqlx.DB) *TxManager {
+func NewTxManager(db *Balancer) *TxManager {
 	return &TxManager{
 		db: db,
 	}
@@ -105,14 +105,14 @@ func (m *TxManager) begin(ctx context.Context, name string) (ctxOut context.Cont
 	if m.isInTx(ctx) {
 		return ctx, noopTX, nil
 	}
-	tx, err := m.db.BeginTx(ctx, nil)
+	tx, err := m.db.Write(ctx).BeginTx(ctx, nil)
 	if err != nil {
 		return nil, noopTX, err
 	}
 	txval := txValue{
 		name:    name,
 		beginTs: time.Now(),
-		db:      m.db,
+		db:      m.db.Write(ctx),
 	}
 
 	txHolder := &TX{

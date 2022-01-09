@@ -481,6 +481,10 @@
         "dislikeCount": {
           "type": "string",
           "format": "uint64"
+        },
+        "depth": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },

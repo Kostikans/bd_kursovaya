@@ -7,9 +7,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kostikan/bd_kursovaya/internal/app/api/forum"
-	"github.com/kostikan/bd_kursovaya/internal/pkg/balancer"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/facade"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/repo"
+	"github.com/kostikan/bd_kursovaya/internal/pkg/sql"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/dig"
@@ -49,17 +49,21 @@ func forumServiceProvider(opts forumProviderOpts) *forum.Implementation {
 	})
 }
 
-func databaseProvider(ctx context.Context) (*sqlx.DB, error) {
+func databaseProvider(ctx context.Context) (*sql.Balancer, error) {
 	db, err := sqlx.Connect("postgres", "user=bd_kursovaya dbname=bd_kursovaya sslmode=disable")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	return db, nil
+	balancer := sql.New()
+	balancer.AddNode(sql.Write, db)
+	balancer.AddNode(sql.Read, db)
+
+	return balancer, nil
 }
 
-func txManagerProvider(ctx context.Context, db *sqlx.DB) (*balancer.TxManager, error) {
-	txManager := balancer.NewTxManager(db)
+func txManagerProvider(ctx context.Context, db *sql.Balancer) (*sql.TxManager, error) {
+	txManager := sql.NewTxManager(db)
 
 	return txManager, nil
 }
@@ -71,7 +75,7 @@ type facadeProviderOpts struct {
 	*repo.PostRepo
 	*repo.TagRepo
 
-	*balancer.TxManager
+	*sql.TxManager
 }
 
 func facadeProvider(opts facadeProviderOpts) *facade.Facade {
@@ -84,18 +88,18 @@ func facadeProvider(opts facadeProviderOpts) *facade.Facade {
 	})
 }
 
-func accountRepoProvider(db *sqlx.DB) *repo.AccountRepo {
+func accountRepoProvider(db *sql.Balancer) *repo.AccountRepo {
 	return repo.NewAccountRepo(db)
 }
 
-func commentRepoProvider(db *sqlx.DB) *repo.CommentRepo {
+func commentRepoProvider(db *sql.Balancer) *repo.CommentRepo {
 	return repo.NewCommentRepo(db)
 }
 
-func postRepoProvider(db *sqlx.DB) *repo.PostRepo {
+func postRepoProvider(db *sql.Balancer) *repo.PostRepo {
 	return repo.NewPostRepo(db)
 }
 
-func tagRepoProvider(db *sqlx.DB) *repo.TagRepo {
+func tagRepoProvider(db *sql.Balancer) *repo.TagRepo {
 	return repo.NewTagRepo(db)
 }

@@ -9,6 +9,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	averageTagsCount = 10
+)
+
 type TxManager interface {
 	RunTX(ctx context.Context, name string, op func(ctx context.Context) error) error
 }
@@ -24,6 +28,8 @@ type CommentRepo interface {
 	GetCommentVote(ctx context.Context, comment model.CommentVote) (res model.CommentVote, err error)
 	CreateCommentVote(ctx context.Context, comment model.CommentVote) (id uint64, err error)
 	IncrementCommentVote(ctx context.Context, commentID uint64, likeCount int64, dislikeCount int64) (id uint64, err error)
+
+	GetComments(ctx context.Context, postID uint64, limit uint32, cursor uint64) (rows []model.ExtendedComment, next uint64, err error)
 }
 
 type PostRepo interface {
@@ -44,6 +50,7 @@ type TagRepo interface {
 	BulkUpdatePostTags(ctx context.Context, ids []uint64, postID uint64) (err error)
 	CheckPostAndTagsExist(ctx context.Context, ids []uint64, postID uint64) (exist bool, err error)
 	UpdatePostTags(ctx context.Context, ids []uint64, postID uint64) (err error)
+	GetTagsByIDs(ctx context.Context, ids []uint64) (rows []model.Tag, err error)
 }
 
 type Facade struct {
@@ -236,5 +243,45 @@ func (f *Facade) AddCommentVote(ctx context.Context, commentVote model.CommentVo
 }
 
 func (f *Facade) GetPosts(ctx context.Context, limit uint32, cursor uint64) (res []model.ExtendedPost, next uint64, err error) {
-	return f.postRepo.GetPosts(ctx, limit, cursor)
+	res, next, err = f.postRepo.GetPosts(ctx, limit, cursor)
+	if err != nil {
+		return res, next, err
+	}
+
+	tagsIDs := make([]uint64, 0, len(res)*averageTagsCount)
+	for _, post := range res {
+		for _, tagID := range post.TagsIDs {
+			tagsIDs = append(tagsIDs, uint64(tagID))
+		}
+	}
+
+	tags, err := f.tagRepo.GetTagsByIDs(ctx, tagsIDs)
+
+	tagMap := make(map[uint64]model.Tag, len(tags))
+	for _, tag := range tags {
+		tagMap[tag.ID] = tag
+	}
+
+	for i := range res {
+		res[i].Tags = make([]model.Tag, 0, len(res[i].TagsIDs))
+		for _, tagID := range res[i].TagsIDs {
+			tag, ok := tagMap[uint64(tagID)]
+			if !ok {
+				continue
+			}
+
+			res[i].Tags = append(res[i].Tags, tag)
+		}
+	}
+
+	return
+}
+
+func (f *Facade) GetComments(ctx context.Context, postID uint64, limit uint32, cursor uint64) (res []model.ExtendedComment, next uint64, err error) {
+	res, next, err = f.commentRepo.GetComments(ctx, postID, limit, cursor)
+	if err != nil {
+		return res, next, err
+	}
+
+	return
 }

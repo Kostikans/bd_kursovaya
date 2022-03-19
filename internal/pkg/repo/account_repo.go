@@ -25,3 +25,10 @@ func (a *AccountRepo) CreateAccount(ctx context.Context, account model.Account) 
 	err = a.db.Write(ctx).Get(&id, query, account.Nickname, account.Avatar, account.Description)
 	return
 }
+
+func (a *AccountRepo) Truncate(ctx context.Context) (err error) {
+	query := `SELECT truncate_tables('bd_kursovaya');`
+
+	_, err = a.db.Write(ctx).Exec(query)
+	return
+}

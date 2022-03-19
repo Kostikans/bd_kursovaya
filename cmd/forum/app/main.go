@@ -32,12 +32,14 @@ func Main(params ...func(*MainOpts)) {
 		Components: map[string]interface{}{
 			"forum service": forumServiceProvider,
 			"facade":        facadeProvider,
+			"resharder":     resharderProvider,
 
-			"database":     databaseProvider,
-			"account repo": accountRepoProvider,
-			"comment repo": commentRepoProvider,
-			"post repo":    postRepoProvider,
-			"tag repo ":    tagRepoProvider,
+			"database":       databaseProvider,
+			"account repo":   accountRepoProvider,
+			"comment repo":   commentRepoProvider,
+			"post repo":      postRepoProvider,
+			"tag repo ":      tagRepoProvider,
+			"resharder repo": reshardeRepoProvider,
 
 			"tx manager provider": txManagerProvider,
 		},

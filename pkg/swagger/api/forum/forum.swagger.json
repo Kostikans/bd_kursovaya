@@ -428,6 +428,28 @@
           "Forum"
         ]
       }
+    },
+    "/forum/truncate": {
+      "post": {
+        "operationId": "Forum_Truncate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/forumTruncateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Forum"
+        ]
+      }
     }
   },
   "definitions": {
@@ -668,6 +690,9 @@
           "type": "string"
         }
       }
+    },
+    "forumTruncateResponse": {
+      "type": "object"
     },
     "protobufAny": {
       "type": "object",

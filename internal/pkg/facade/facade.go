@@ -19,6 +19,7 @@ type TxManager interface {
 
 type AccountRepo interface {
 	CreateAccount(ctx context.Context, account model.Account) (id uint64, err error)
+	Truncate(ctx context.Context) (err error)
 }
 
 type CommentRepo interface {
@@ -30,6 +31,7 @@ type CommentRepo interface {
 	IncrementCommentVote(ctx context.Context, commentID uint64, likeCount int64, dislikeCount int64) (id uint64, err error)
 
 	GetComments(ctx context.Context, postID uint64, limit uint32, cursor uint64) (rows []model.ExtendedComment, next uint64, err error)
+	CreateCommentPartition(ctx context.Context, comment model.Comment) (err error)
 }
 
 type PostRepo interface {
@@ -91,6 +93,12 @@ func (f *Facade) CreateComment(ctx context.Context, comment model.Comment) (id u
 	if !exist {
 		return 0, status.Errorf(codes.NotFound, "author or post not found")
 	}
+
+	//err = f.commentRepo.CreateCommentPartition(ctx, comment)
+	//fmt.Println(err)
+	//if err != nil {
+	//	return
+	//}
 
 	return f.commentRepo.CreateComment(ctx, comment)
 }
@@ -284,4 +292,8 @@ func (f *Facade) GetComments(ctx context.Context, postID uint64, limit uint32, c
 	}
 
 	return
+}
+
+func (f *Facade) Truncate(ctx context.Context) (err error) {
+	return f.accountRepo.Truncate(ctx)
 }

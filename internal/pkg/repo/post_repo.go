@@ -44,7 +44,7 @@ func (p *PostRepo) GetPostVote(ctx context.Context, post model.PostVote) (res mo
 	query := `
 SELECT id,post_id,author_id,vote FROM post_vote WHERE author_id = $1 AND post_id = $2`
 
-	err = p.db.Read(ctx).Get(&res, query, post.AuthorID, post.PostID)
+	err = p.db.Write(ctx).Get(&res, query, post.AuthorID, post.PostID)
 	return
 }
 
@@ -54,15 +54,16 @@ INSERT INTO post_vote(author_id, post_id,vote) VALUES($1,$2,$3)
  ON CONFLICT (post_id,author_id) DO UPDATE SET vote = $3 RETURNING id`
 
 	err = p.db.Write(ctx).Get(&id, query, post.AuthorID, post.PostID, post.Vote)
+
 	return
 }
 
 func (p *PostRepo) IncrementPostVote(ctx context.Context, postID uint64, likeCount int64, dislikeCount int64) (id uint64, err error) {
 
 	query := `
-WITH curr AS (SELECT post_id,like_count,dislike_count FROM post_vote_agg WHERE post_id = $1)
 INSERT INTO post_vote_agg(post_id,like_count,dislike_count) VALUES($1,$2,$3) 
-ON CONFLICT (post_id) DO UPDATE SET like_count = (SELECT like_count FROM curr) + $2, dislike_count = (SELECT dislike_count FROM curr) + $3 RETURNING id`
+ON CONFLICT (post_id) DO UPDATE SET like_count = excluded.like_count + $2,
+                                    dislike_count = excluded.dislike_count + $3 RETURNING id`
 
 	err = p.db.Write(ctx).Get(&id, query, postID, likeCount, dislikeCount)
 	return

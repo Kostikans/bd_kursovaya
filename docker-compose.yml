@@ -1,0 +1,66 @@
+version: '3'
+services:
+  master:
+    image: postgres:13
+    container_name: master
+    restart: always
+    volumes:
+      - ./database_data/master:/var/lib/postgresql/data/db-files/
+      - ./database_config/master/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - ./database_config/master/my-pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      - 'PGDATA=/var/lib/postgresql/data/db-files/'
+      - 'POSTGRES_PASSWORD=12345'
+      - 'POSTGRES_DB=forum'
+  slave:
+    image: postgres:13
+    container_name: slave
+    restart: always
+    volumes:
+      - ./database_data/slave:/var/lib/postgresql/data/db-files/
+      - ./database_config/slave/my-postgres.conf:/etc/postgresql/postgresql.conf
+      - ./database_config/slave/my-pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "127.0.0.1:5435:5432"
+    environment:
+      - 'PGDATA=/var/lib/postgresql/data/db-files/'
+      - 'POSTGRES_PASSWORD=12345'
+      - 'POSTGRES_DB=forum'
+  pgbouncer_master:
+    container_name: pgbouncer_master
+    depends_on:
+      - master
+      - slave
+    environment:
+      - DB_USER=master
+      - DB_PASSWORD=12345
+      - DB_HOST=master
+      - DB_NAME=forum
+      - POOL_MODE=transaction
+      - ADMIN_USERS=postgres,master
+      - MAX_CLIENT_CONN=20000
+    restart: always
+    image: edoburu/pgbouncer
+    ports:
+      - "127.0.0.1:5440:5432"
+  pgbouncer_slave:
+    container_name: pgbouncer_slave
+    depends_on:
+      - master
+      - slave
+    environment:
+      - DB_USER=master
+      - DB_PASSWORD=12345
+      - DB_HOST=slave
+      - DB_NAME=forum
+      - POOL_MODE=transaction
+      - ADMIN_USERS=postgres,master
+      - MAX_CLIENT_CONN=20000
+    restart: always
+    image: edoburu/pgbouncer
+    ports:
+      - "127.0.0.1:5441:5432"

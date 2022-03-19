@@ -80,6 +80,10 @@ func (p *TagRepo) UpdatePostTags(ctx context.Context, ids []uint64, postID uint6
 }
 
 func (p *TagRepo) GetTagsByIDs(ctx context.Context, ids []uint64) (rows []model.Tag, err error) {
+	if len(ids) == 0 {
+		return
+	}
+
 	tagIds := make([]string, 0, len(ids))
 	for _, id := range ids {
 		tagIds = append(tagIds, strconv.FormatUint(id, 10))

@@ -72,6 +72,12 @@ service Forum {
       get: "/forum/post/{post_id}/comment/list"
     };
   }
+
+  rpc Truncate (TruncateRequest) returns (TruncateResponse) {
+    option (google.api.http) = {
+      post: "/forum/truncate"
+    };
+  }
 }
 
 message Account {
@@ -204,4 +210,10 @@ message GetCommentListResponse{
   repeated Comment comments = 1;
   uint64 next = 2;
   bool has_next = 3;
+}
+
+message TruncateRequest{
+}
+
+message TruncateResponse{
 }

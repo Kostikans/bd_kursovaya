@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kostikan/bd_kursovaya/internal/pkg/model"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/sql"
@@ -21,7 +22,6 @@ func NewCommentRepo(db *sql.Balancer) *CommentRepo {
 
 func (p *CommentRepo) CreateComment(ctx context.Context, comment model.Comment) (id uint64, err error) {
 	query := `INSERT INTO comment(author_id, post_id, parent_id, text) VALUES($1,$2,$3,$4) RETURNING id`
-
 	err = p.db.Write(ctx).Get(&id, query, comment.AuthorID, comment.PostID, comment.ParentID, comment.Text)
 	return
 }
@@ -39,7 +39,7 @@ func (p *CommentRepo) GetCommentVote(ctx context.Context, comment model.CommentV
 	query := `
 SELECT id,post_id,author_id,comment_id,vote FROM comment_vote WHERE author_id = $1 AND post_id = $2 AND comment_id = $3`
 
-	err = p.db.Read(ctx).Get(&res, query, comment.AuthorID, comment.PostID, comment.CommentID)
+	err = p.db.Write(ctx).Get(&res, query, comment.AuthorID, comment.PostID, comment.CommentID)
 	return
 }
 
@@ -54,9 +54,9 @@ INSERT INTO comment_vote(author_id, post_id,comment_id,vote) VALUES($1,$2,$3,$4)
 
 func (p *CommentRepo) IncrementCommentVote(ctx context.Context, commentID uint64, likeCount int64, dislikeCount int64) (id uint64, err error) {
 	query := `
-WITH curr AS (SELECT comment_id,like_count,dislike_count FROM comment_vote_agg WHERE comment_id = $1)
 INSERT INTO comment_vote_agg(comment_id,like_count,dislike_count) VALUES($1,$2,$3) 
-ON CONFLICT (comment_id) DO UPDATE SET like_count = (SELECT like_count FROM curr) + $2, dislike_count = (SELECT dislike_count FROM curr) + $3 RETURNING id`
+ON CONFLICT (comment_id) DO UPDATE SET like_count = excluded.like_count + $2,
+                                       dislike_count = excluded.dislike_count + $3 RETURNING id`
 
 	err = p.db.Write(ctx).Get(&id, query, commentID, likeCount, dislikeCount)
 	return
@@ -91,5 +91,24 @@ FROM comments_tree ct LEFT JOIN post_vote_agg pva ON ct.id = pva.post_id WHERE c
 		next = rows[len(rows)-1].ID
 	}
 
+	return
+}
+
+func (p *CommentRepo) CreateCommentPartition(ctx context.Context, comment model.Comment) (err error) {
+	partitionID := comment.PostID
+	partitionRange := uint64(10)
+	var firstID, lastID uint64
+	if partitionID%partitionRange == uint64(0) {
+		firstID = (partitionID - 1) / partitionRange * partitionRange
+		lastID = ((partitionID-1)/partitionRange + 1) * partitionRange
+	} else {
+		firstID = partitionID / partitionRange * partitionRange
+		lastID = (partitionID/partitionRange + 1) * partitionRange
+	}
+	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (CHECK (
+         post_id > %d AND
+         post_id <= %d))
+         INHERITS (%s)`, fmt.Sprintf("comment_%d_%d", firstID, lastID), firstID, lastID, "comment")
+	_, err = p.db.Write(ctx).Exec(query)
 	return
 }

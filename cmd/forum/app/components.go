@@ -10,6 +10,7 @@ import (
 	"github.com/kostikan/bd_kursovaya/internal/pkg/facade"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/repo"
 	"github.com/kostikan/bd_kursovaya/internal/pkg/sql"
+	"github.com/kostikan/bd_kursovaya/internal/pkg/updater"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/dig"
@@ -17,7 +18,8 @@ import (
 
 type appContext struct {
 	dig.In
-	Forum *forum.Implementation
+	Forum     *forum.Implementation
+	Resharder *updater.Resharder
 }
 
 func provideAndInvoke(ctx context.Context, c *dig.Container, providers map[string]interface{}, fn func(ac appContext)) error {
@@ -50,21 +52,30 @@ func forumServiceProvider(opts forumProviderOpts) *forum.Implementation {
 }
 
 func databaseProvider(ctx context.Context) (*sql.Balancer, error) {
-	db, err := sqlx.Connect("postgres", "user=bd_kursovaya dbname=bd_kursovaya sslmode=disable")
+	master, err := sqlx.Connect("postgres", "postgres://bd_kursovaya:bd_kursovaya@localhost:5432/bd_kursovaya?sslmode=disable&binary_parameters=yes")
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(err, "failed connect to database")
 	}
 
+	//slave, err := sqlx.Connect("postgres", "postgres://master:12345@localhost:5441/forum?sslmode=disable&binary_parameters=yes")
+	//if err != nil {
+	//	log.Fatalln(err, "failed connect to database")
+	//}
+
 	balancer := sql.New()
-	balancer.AddNode(sql.Write, db)
-	balancer.AddNode(sql.Read, db)
+	balancer.AddNode(sql.Write, master)
+	//balancer.AddNode(sql.Read, slave)
 
 	return balancer, nil
 }
 
+func resharderProvider(ctx context.Context, repo *repo.ResharderRepo) (*updater.Resharder, error) {
+	resharder := updater.NewResharder(repo)
+	return resharder, nil
+}
+
 func txManagerProvider(ctx context.Context, db *sql.Balancer) (*sql.TxManager, error) {
 	txManager := sql.NewTxManager(db)
-
 	return txManager, nil
 }
 
@@ -102,4 +113,8 @@ func postRepoProvider(db *sql.Balancer) *repo.PostRepo {
 
 func tagRepoProvider(db *sql.Balancer) *repo.TagRepo {
 	return repo.NewTagRepo(db)
+}
+
+func reshardeRepoProvider(db *sql.Balancer) *repo.ResharderRepo {
+	return repo.NewResharderRepo(db)
 }
